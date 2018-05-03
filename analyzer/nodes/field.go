@@ -1,7 +1,7 @@
 package nodes
 
 type Field struct {
-	Name      string
-	Arguments []string
-	Type      *Type
+	Name       string
+	Parameters []*Parameter
+	Type       *Type
 }

@@ -1,17 +1,23 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/dalloriam/graphql-tools/analyzer"
 )
 
 func main() {
-	schema, err := analyzer.LoadGraphQLSchema("./schema")
+	rawSchema, err := analyzer.LoadGraphQLSchema("./schema")
 	if err != nil {
 		panic(err)
 	}
 
-	parser := analyzer.NewSchemaParser(schema)
-	if err := parser.Parse(); err != nil {
+	parser := analyzer.NewSchemaParser(rawSchema)
+
+	schema, err := parser.Parse()
+	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println(schema.Types)
 }

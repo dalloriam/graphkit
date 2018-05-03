@@ -60,20 +60,24 @@ func (p *SchemaParser) expect(body string) error {
 	return nil
 }
 
-func (p *SchemaParser) Parse() error {
+func (p *SchemaParser) Parse() (*nodes.Schema, error) {
+
+	types := make(map[string]*nodes.Block)
+
 	for p.nextTok != scanner.EOF && p.currentTok != scanner.EOF {
 		switch p.currentText {
 		case "#":
 			p.parseComment()
 		case "input", "type":
-			_, err := p.parseBlock()
+			blk, err := p.parseBlock()
 			if err != nil {
-				return err
+				return nil, err
 			}
+			types[blk.Name] = blk
 		}
 		p.Next()
 	}
-	return nil
+	return &nodes.Schema{Types: types}, nil
 }
 
 func (p *SchemaParser) parseBlock() (*nodes.Block, error) {
@@ -123,13 +127,20 @@ func (p *SchemaParser) parseField() (*nodes.Field, error) {
 
 	field.Name = p.currentText
 
+	var parameters []*nodes.Parameter
+
 	if p.accept("(") {
 		for !p.accept(")") {
 			p.Next()
-			// TODO: Parse parameters
-			//fmt.Println("PARAM: ", p.currentText)
+			param, err := p.parseParameter()
+			if err != nil {
+				return nil, err
+			}
+			parameters = append(parameters, param)
 		}
 	}
+
+	field.Parameters = parameters
 
 	if err := p.expect(":"); err != nil {
 		return nil, err
@@ -155,7 +166,36 @@ func (p *SchemaParser) parseField() (*nodes.Field, error) {
 		field.Type.Nullable,
 	)
 
+	fmt.Printf("        params: %v\n", field.Parameters)
+
 	return field, nil
+}
+
+func (p *SchemaParser) parseParameter() (*nodes.Parameter, error) {
+	param := &nodes.Parameter{}
+	param.Name = p.currentText
+
+	if err := p.expect(":"); err != nil {
+		return nil, err
+	}
+
+	t, err := p.parseType()
+	if err != nil {
+		return nil, err
+	}
+
+	param.Type = t
+
+	if p.accept("=") {
+		p.Next()
+		param.DefaultValue = p.currentText
+	}
+
+	if p.nextText == "," {
+		p.Next()
+	}
+
+	return param, nil
 }
 
 func (p *SchemaParser) parseType() (*nodes.Type, error) {
