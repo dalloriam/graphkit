@@ -9,7 +9,7 @@ import (
 	"github.com/dalloriam/graphql-tools/analyzer/nodes"
 )
 
-type SchemaParser struct {
+type schemaParser struct {
 	schema string
 	stream *scanner.Scanner
 
@@ -20,13 +20,13 @@ type SchemaParser struct {
 	nextText string
 }
 
-func NewSchemaParser(schema string) *SchemaParser {
+func newSchemaParser(schema string) *schemaParser {
 	reader := strings.NewReader(schema)
 	scan := scanner.Scanner{}
 	scan.Init(reader)
 	scan.Whitespace = 1<<'\t' | 1<<'\r' | 1<<' '
 
-	s := &SchemaParser{
+	s := &schemaParser{
 		schema: schema,
 		stream: &scan,
 	}
@@ -35,37 +35,50 @@ func NewSchemaParser(schema string) *SchemaParser {
 	return s
 }
 
-func (p *SchemaParser) Next() {
+func (p *schemaParser) Next() {
 	p.currentText = p.nextText
 	p.nextTok = p.currentTok
 
 	p.nextTok = p.stream.Scan()
 	p.nextText = p.stream.TokenText()
-
-	//fmt.Println("currentTok: ", p.currentText)
-	//fmt.Println("nextTok: ", p.nextText)
 }
 
-func (p *SchemaParser) accept(body string) (ok bool) {
+func (p *schemaParser) accept(body string) (ok bool) {
 	if ok = (p.nextText == body); ok {
 		p.Next()
 	}
 	return
 }
 
-func (p *SchemaParser) expect(body string) error {
+func (p *schemaParser) expect(body string) error {
 	if !p.accept(body) {
 		return fmt.Errorf("expected '%s', got '%s'", body, p.nextText)
 	}
 	return nil
 }
 
-func (p *SchemaParser) Parse() (*nodes.Schema, error) {
+func (p *schemaParser) Parse() (*Schema, error) {
 
-	types := make(map[string]*nodes.Block)
+	schema := &Schema{
+		types: make(map[string]*nodes.Block),
+	}
 
 	for p.nextTok != scanner.EOF && p.currentTok != scanner.EOF {
 		switch p.currentText {
+		case "schema":
+			blk, err := p.parseRoot()
+			if err != nil {
+				return nil, err
+			}
+
+			for _, f := range blk.Fields {
+				if f.Name == "query" {
+					schema.RootQuery = f.Type.Name
+				} else if f.Name == "mutation" {
+					schema.RootMutation = f.Type.Name
+				}
+			}
+
 		case "#":
 			p.parseComment()
 		case "input", "type":
@@ -73,22 +86,16 @@ func (p *SchemaParser) Parse() (*nodes.Schema, error) {
 			if err != nil {
 				return nil, err
 			}
-			types[blk.Name] = blk
+			schema.types[blk.Name] = blk
 		}
 		p.Next()
 	}
-	return &nodes.Schema{Types: types}, nil
+	return schema, nil
 }
 
-func (p *SchemaParser) parseBlock() (*nodes.Block, error) {
+func (p *schemaParser) parseRoot() (*nodes.Block, error) {
 	block := &nodes.Block{}
 	block.Type = p.currentText
-	p.Next()
-
-	block.Name = p.currentText
-
-	fmt.Println()
-	fmt.Println(block.Type, ": ", block.Name)
 
 	if err := p.expect("{"); err != nil {
 		return nil, err
@@ -118,7 +125,42 @@ func (p *SchemaParser) parseBlock() (*nodes.Block, error) {
 	return block, nil
 }
 
-func (p *SchemaParser) parseField() (*nodes.Field, error) {
+func (p *schemaParser) parseBlock() (*nodes.Block, error) {
+	block := &nodes.Block{}
+	block.Type = p.currentText
+	p.Next()
+
+	block.Name = p.currentText
+
+	if err := p.expect("{"); err != nil {
+		return nil, err
+	}
+
+	var fields []*nodes.Field
+
+	for !p.accept("}") {
+		if p.nextText == "\n" {
+			p.Next()
+			continue
+		}
+
+		if p.nextText == "#" {
+			p.parseComment()
+		}
+
+		f, err := p.parseField()
+		if err != nil {
+			return nil, err
+		}
+
+		fields = append(fields, f)
+	}
+	block.Fields = fields
+
+	return block, nil
+}
+
+func (p *schemaParser) parseField() (*nodes.Field, error) {
 	var line []string
 
 	field := &nodes.Field{}
@@ -158,20 +200,10 @@ func (p *SchemaParser) parseField() (*nodes.Field, error) {
 		p.Next()
 	}
 
-	fmt.Printf(
-		"    - %s -> <type='%s' repeated='%v' nullable='%v'>\n",
-		field.Name,
-		field.Type.Name,
-		field.Type.Repetition == nodes.MULTIPLE,
-		field.Type.Nullable,
-	)
-
-	fmt.Printf("        params: %v\n", field.Parameters)
-
 	return field, nil
 }
 
-func (p *SchemaParser) parseParameter() (*nodes.Parameter, error) {
+func (p *schemaParser) parseParameter() (*nodes.Parameter, error) {
 	param := &nodes.Parameter{}
 	param.Name = p.currentText
 
@@ -198,7 +230,7 @@ func (p *SchemaParser) parseParameter() (*nodes.Parameter, error) {
 	return param, nil
 }
 
-func (p *SchemaParser) parseType() (*nodes.Type, error) {
+func (p *schemaParser) parseType() (*nodes.Type, error) {
 	isList := p.accept("[")
 	p.Next()
 
@@ -217,7 +249,7 @@ func (p *SchemaParser) parseType() (*nodes.Type, error) {
 	return t, nil
 }
 
-func (p *SchemaParser) parseComment() {
+func (p *schemaParser) parseComment() {
 	for p.currentText != "\n" {
 		p.Next()
 	}

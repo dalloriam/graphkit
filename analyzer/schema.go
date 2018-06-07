@@ -2,17 +2,54 @@ package analyzer
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/dalloriam/graphql-tools/analyzer/nodes"
 )
+
+// Schema represents a parsed GraphQL schema.
+type Schema struct {
+	types map[string]*nodes.Block
+
+	RootQuery    string
+	RootMutation string
+}
+
+// ResolveType resolves a type by name
+func (s *Schema) ResolveType(typeName string) (*nodes.Block, error) {
+	t, ok := s.types[typeName]
+	if !ok {
+		return nil, fmt.Errorf("type %s does not exist", typeName)
+	}
+
+	return t, nil
+}
+
+// LoadSchema loads a GraphQL schema from a directory.
+func LoadSchema(rootPath string) (*Schema, error) {
+	raw, err := loadFromDisk(rootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	parser := newSchemaParser(raw)
+	parsed, err := parser.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	return parsed, nil
+}
 
 type schemaLoader struct {
 	LoadedSchema bytes.Buffer
 }
 
-func (s *schemaLoader) ProcessFile(path string, info os.FileInfo, err error) error {
+func (s *schemaLoader) processFile(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
@@ -34,9 +71,9 @@ func (s *schemaLoader) ProcessFile(path string, info os.FileInfo, err error) err
 	return nil
 }
 
-func LoadGraphQLSchema(rootPath string) (string, error) {
+func loadFromDisk(rootPath string) (string, error) {
 	loader := schemaLoader{}
-	if err := filepath.Walk(rootPath, loader.ProcessFile); err != nil {
+	if err := filepath.Walk(rootPath, loader.processFile); err != nil {
 		return "", err
 	}
 
