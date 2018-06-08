@@ -1,10 +1,26 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/dalloriam/graphql-tools/analyzer"
 )
+
+const x = `query() {
+}`
+
+const r = `query() {
+	Me {
+		Organizations {
+			List(Size: 10) {
+				Hits {
+					ID
+					Name
+				}
+				Total
+			}
+		}
+	}
+}
+`
 
 func main() {
 
@@ -12,6 +28,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println(schema.RootMutation)
+	if err := ValidateQuery(r, schema); err != nil {
+		panic(err)
+	}
 }
