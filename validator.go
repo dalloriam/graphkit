@@ -9,12 +9,12 @@ import (
 )
 
 type QueryValidator struct {
-	schema       *analyzer.Schema
-	visitedTypes map[string]struct{}
+	schema   *analyzer.Schema
+	visitMap *Subgraph
 }
 
 func NewQueryValidator(schema *analyzer.Schema) *QueryValidator {
-	return &QueryValidator{schema, make(map[string]struct{})}
+	return &QueryValidator{schema, newSubgraph()}
 }
 
 func (v *QueryValidator) walk(currentTree *request.Request, currentBlock *nodes.Block) error {
@@ -22,6 +22,12 @@ func (v *QueryValidator) walk(currentTree *request.Request, currentBlock *nodes.
 		if blockItm.Name == currentTree.Name {
 			if len(currentTree.Children) > 0 {
 				fmt.Printf("visiting gql type '%s' from field '%s'\n", blockItm.Type.Name, blockItm.Name)
+
+				if v.visitMap.HasEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name) {
+					return fmt.Errorf("cycle detected: '%s.%s' -> '%s'", currentBlock.Type, blockItm.Name, blockItm.Type.Name)
+				}
+				v.visitMap.AddEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name)
+
 				newBlock, err := v.schema.ResolveType(blockItm.Type.Name)
 				if err != nil {
 					return err

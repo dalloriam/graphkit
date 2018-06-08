@@ -14,6 +14,23 @@ const r = `query() {
 				Hits {
 					ID
 					Name
+					SalesChannels {
+						List(Size: 10) {
+							Hits {
+								ID
+								Organization {
+									ID
+									SalesChannels {
+										List(Size: 10) {
+											Hits {
+												ID
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 				Total
 			}
