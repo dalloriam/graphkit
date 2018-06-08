@@ -1,4 +1,4 @@
-package analyzer
+package graphkit
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"text/scanner"
 
-	"github.com/dalloriam/graphql-tools/analyzer/nodes"
+	"github.com/dalloriam/graphkit/nodes"
 )
 
 type schemaParser struct {

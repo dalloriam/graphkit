@@ -1,4 +1,4 @@
-package analyzer
+package graphkit
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dalloriam/graphql-tools/analyzer/nodes"
+	"github.com/dalloriam/graphkit/nodes"
 )
 
 // Schema represents a parsed GraphQL schema.

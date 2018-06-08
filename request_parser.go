@@ -1,4 +1,4 @@
-package request
+package graphkit
 
 import (
 	"fmt"
@@ -55,13 +55,13 @@ func (r *requestParser) expect(body string) error {
 	return nil
 }
 
-func (r *requestParser) Parse() (*Request, error) {
-	var req *Request
+func (r *requestParser) Parse() (*request, error) {
+	var req *request
 
 	if r.currentText == "query" {
-		req = &Request{Name: "query"}
+		req = &request{Name: "query"}
 	} else if r.currentText == "mutation" {
-		req = &Request{Name: "mutation"}
+		req = &request{Name: "mutation"}
 	} else {
 		return nil, fmt.Errorf("invalid root keyword: %s", r.currentText)
 	}
@@ -81,8 +81,8 @@ func (r *requestParser) Parse() (*Request, error) {
 	return req, nil
 }
 
-func (r *requestParser) parseBlock() ([]*Request, error) {
-	block := []*Request{}
+func (r *requestParser) parseBlock() ([]*request, error) {
+	block := []*request{}
 
 	for !r.accept("}") {
 		r.Next()
@@ -92,7 +92,7 @@ func (r *requestParser) parseBlock() ([]*Request, error) {
 			r.parseParameters()
 		}
 
-		children := []*Request{}
+		children := []*request{}
 
 		if r.accept("{") {
 			var err error
@@ -101,7 +101,7 @@ func (r *requestParser) parseBlock() ([]*Request, error) {
 				return nil, err
 			}
 		}
-		block = append(block, &Request{Name: name, Children: children})
+		block = append(block, &request{Name: name, Children: children})
 	}
 	return block, nil
 }

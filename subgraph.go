@@ -1,14 +1,16 @@
-package main
+package graphkit
 
-type Subgraph struct {
+// This map used for O(1) insertions & lookups was proving a bit clunky.
+// This graph struct should make it a bit friendlier to use.
+type graph struct {
 	internalMap map[string]map[string]map[string]struct{}
 }
 
-func newSubgraph() *Subgraph {
-	return &Subgraph{make(map[string]map[string]map[string]struct{})}
+func newGraph() *graph {
+	return &graph{make(map[string]map[string]map[string]struct{})}
 }
 
-func (s *Subgraph) AddEdge(fromNode, toNode, edgeName string) {
+func (s *graph) AddEdge(fromNode, toNode, edgeName string) {
 	fromMap, ok := s.internalMap[fromNode]
 	if !ok {
 		s.internalMap[fromNode] = make(map[string]map[string]struct{})
@@ -24,7 +26,7 @@ func (s *Subgraph) AddEdge(fromNode, toNode, edgeName string) {
 	toMap[edgeName] = struct{}{}
 }
 
-func (s *Subgraph) HasEdge(fromNode, toNode, edgeName string) bool {
+func (s *graph) HasEdge(fromNode, toNode, edgeName string) bool {
 	fromMap, ok := s.internalMap[fromNode]
 	if !ok {
 		return false
