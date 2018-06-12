@@ -19,7 +19,6 @@ func (v *queryValidator) walk(currentTree *request, currentBlock *nodes.Block) e
 	for _, blockItm := range currentBlock.Fields {
 		if blockItm.Name == currentTree.Name {
 			if len(currentTree.Children) > 0 {
-				fmt.Printf("visiting gql type '%s' from field '%s'\n", blockItm.Type.Name, blockItm.Name)
 
 				if v.visitMap.HasEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name) {
 					return fmt.Errorf("cycle detected: '%s.%s' -> '%s'", currentBlock.Type, blockItm.Name, blockItm.Type.Name)
