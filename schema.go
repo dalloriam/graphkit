@@ -1,4 +1,4 @@
-package analyzer
+package graphkit
 
 import (
 	"bytes"
@@ -8,20 +8,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dalloriam/graphql-tools/analyzer/nodes"
+	"github.com/dalloriam/graphkit/nodes"
 )
 
 // Schema represents a parsed GraphQL schema.
 type Schema struct {
-	types map[string]*nodes.Block
+	Types map[string]*nodes.Block `json:"types,omitempty"`
 
-	RootQuery    string
-	RootMutation string
+	RootQuery    string `json:"root_query,omitempty"`
+	RootMutation string `json:"root_mutation,omitempty"`
 }
 
 // ResolveType resolves a type by name
 func (s *Schema) ResolveType(typeName string) (*nodes.Block, error) {
-	t, ok := s.types[typeName]
+	t, ok := s.Types[typeName]
 	if !ok {
 		return nil, fmt.Errorf("type %s does not exist", typeName)
 	}

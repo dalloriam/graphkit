@@ -1,4 +1,4 @@
-package analyzer
+package graphkit
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"text/scanner"
 
-	"github.com/dalloriam/graphql-tools/analyzer/nodes"
+	"github.com/dalloriam/graphkit/nodes"
 )
 
 type schemaParser struct {
@@ -60,7 +60,7 @@ func (p *schemaParser) expect(body string) error {
 func (p *schemaParser) Parse() (*Schema, error) {
 
 	schema := &Schema{
-		types: make(map[string]*nodes.Block),
+		Types: make(map[string]*nodes.Block),
 	}
 
 	for p.nextTok != scanner.EOF && p.currentTok != scanner.EOF {
@@ -86,7 +86,7 @@ func (p *schemaParser) Parse() (*Schema, error) {
 			if err != nil {
 				return nil, err
 			}
-			schema.types[blk.Name] = blk
+			schema.Types[blk.Name] = blk
 		}
 		p.Next()
 	}

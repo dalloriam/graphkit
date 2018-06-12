@@ -1,27 +1,30 @@
-package main
+package graphkit
 
 import (
 	"fmt"
 
-	"github.com/dalloriam/graphql-tools/analyzer"
-	"github.com/dalloriam/graphql-tools/analyzer/nodes"
-	"github.com/dalloriam/graphql-tools/request"
+	"github.com/dalloriam/graphkit/nodes"
 )
 
-type QueryValidator struct {
-	schema       *analyzer.Schema
-	visitedTypes map[string]struct{}
+type queryValidator struct {
+	schema   *Schema
+	visitMap *graph
 }
 
-func NewQueryValidator(schema *analyzer.Schema) *QueryValidator {
-	return &QueryValidator{schema, make(map[string]struct{})}
+func newQueryValidator(schema *Schema) *queryValidator {
+	return &queryValidator{schema, newGraph()}
 }
 
-func (v *QueryValidator) walk(currentTree *request.Request, currentBlock *nodes.Block) error {
+func (v *queryValidator) walk(currentTree *request, currentBlock *nodes.Block) error {
 	for _, blockItm := range currentBlock.Fields {
 		if blockItm.Name == currentTree.Name {
 			if len(currentTree.Children) > 0 {
-				fmt.Printf("visiting gql type '%s' from field '%s'\n", blockItm.Type.Name, blockItm.Name)
+
+				if v.visitMap.HasEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name) {
+					return fmt.Errorf("cycle detected: '%s.%s' -> '%s'", currentBlock.Type, blockItm.Name, blockItm.Type.Name)
+				}
+				v.visitMap.AddEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name)
+
 				newBlock, err := v.schema.ResolveType(blockItm.Type.Name)
 				if err != nil {
 					return err
@@ -39,7 +42,7 @@ func (v *QueryValidator) walk(currentTree *request.Request, currentBlock *nodes.
 	return fmt.Errorf("field '%s' not found", currentTree.Name)
 }
 
-func (v *QueryValidator) Traverse(req *request.Request) error {
+func (v *queryValidator) Traverse(req *request) error {
 	var err error
 
 	var currentBlock *nodes.Block
@@ -61,10 +64,12 @@ func (v *QueryValidator) Traverse(req *request.Request) error {
 	return nil
 }
 
-func ValidateQuery(query string, schema *analyzer.Schema) error {
-	validator := NewQueryValidator(schema)
+// ValidateQuery validates a GraphQL query against the provided schema.
+// It checks for unknown fields as well as for possible malicious queries.
+func ValidateQuery(query string, schema *Schema) error {
+	validator := newQueryValidator(schema)
 
-	req, err := request.NewRequest(query)
+	req, err := newRequest(query)
 	if err != nil {
 		return err
 	}
