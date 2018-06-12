@@ -8,7 +8,7 @@ const (
 )
 
 type Type struct {
-	Name       string
-	Nullable   bool
-	Repetition typeRepetition
+	Name       string         `json:"name,omitempty"`
+	Nullable   bool           `json:"nullable,omitempty"`
+	Repetition typeRepetition `json:"repetition,omitempty"`
 }

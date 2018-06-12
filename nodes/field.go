@@ -1,7 +1,7 @@
 package nodes
 
 type Field struct {
-	Name       string
-	Parameters []*Parameter
-	Type       *Type
+	Name       string       `json:"name,omitempty"`
+	Parameters []*Parameter `json:"parameters,omitempty"`
+	Type       *Type        `json:"type,omitempty"`
 }

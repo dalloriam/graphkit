@@ -1,0 +1,13 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    GetUser(Token: String): User!
+    Authenticate(Credentials: UserCredentials!): String!
+}
+
+type Mutation {
+    DeleteUser(ID: Int!): Boolean!
+}

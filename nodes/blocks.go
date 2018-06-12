@@ -1,8 +1,8 @@
 package nodes
 
 type Block struct {
-	Type string
-	Name string
+	Type string `json:"type,omitempty"`
+	Name string `json:"name,omitempty"`
 
-	Fields []*Field
+	Fields []*Field `json:"fields,omitempty"`
 }
