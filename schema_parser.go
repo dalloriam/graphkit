@@ -254,7 +254,6 @@ func (p *schemaParser) parseType() (*nodes.Type, error) {
 
 func (p *schemaParser) parseComment() {
 	for p.currentText != "\n" {
-		fmt.Printf("Skipping %s\n", p.currentText)
 		p.Next()
 	}
 	p.Next()
