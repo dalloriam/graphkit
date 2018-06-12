@@ -84,7 +84,7 @@ func (r *requestParser) Parse() (*request, error) {
 func (r *requestParser) parseBlock() ([]*request, error) {
 	block := []*request{}
 
-	for !r.accept("}") {
+	for !r.accept("}") && r.nextTok != scanner.EOF {
 		r.Next()
 		name := r.currentText
 
@@ -107,7 +107,7 @@ func (r *requestParser) parseBlock() ([]*request, error) {
 }
 
 func (r *requestParser) parseParameters() {
-	for !r.accept(")") {
+	for !r.accept(")") && r.nextTok != scanner.EOF {
 		r.Next()
 	}
 }

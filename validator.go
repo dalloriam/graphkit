@@ -67,6 +67,7 @@ func (v *queryValidator) Traverse(req *request) error {
 // ValidateQuery validates a GraphQL query against the provided schema.
 // It checks for unknown fields as well as for possible malicious queries.
 func ValidateQuery(query string, schema *Schema) error {
+
 	validator := newQueryValidator(schema)
 
 	req, err := newRequest(query)
