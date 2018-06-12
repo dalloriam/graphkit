@@ -13,6 +13,8 @@ import (
 
 // Schema represents a parsed GraphQL schema.
 type Schema struct {
+	Raw string
+
 	Types map[string]*nodes.Block `json:"types,omitempty"`
 
 	RootQuery    string `json:"root_query,omitempty"`
@@ -41,6 +43,8 @@ func LoadSchema(rootPath string) (*Schema, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	parsed.Raw = raw
 
 	return parsed, nil
 }
