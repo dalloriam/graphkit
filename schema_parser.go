@@ -64,7 +64,12 @@ func (p *schemaParser) Parse() (*Schema, error) {
 	}
 
 	for p.nextTok != scanner.EOF && p.currentTok != scanner.EOF {
+		if p.currentText == "#" {
+			p.parseComment()
+		}
+
 		switch p.currentText {
+
 		case "schema":
 			blk, err := p.parseRoot()
 			if err != nil {
@@ -79,8 +84,6 @@ func (p *schemaParser) Parse() (*Schema, error) {
 				}
 			}
 
-		case "#":
-			p.parseComment()
 		case "input", "type":
 			blk, err := p.parseBlock()
 			if err != nil {
@@ -251,6 +254,7 @@ func (p *schemaParser) parseType() (*nodes.Type, error) {
 
 func (p *schemaParser) parseComment() {
 	for p.currentText != "\n" {
+		fmt.Printf("Skipping %s\n", p.currentText)
 		p.Next()
 	}
 	p.Next()
