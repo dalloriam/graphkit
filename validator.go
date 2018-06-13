@@ -22,7 +22,7 @@ func (v *queryValidator) walk(currentTree *request, currentBlock *nodes.Block) e
 			if len(currentTree.Children) > 0 {
 
 				if v.visitMap.HasEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name) && !v.config.IgnoreExponentialQueries {
-					return fmt.Errorf("cycle detected: '%s.%s' -> '%s'", currentBlock.Type, blockItm.Name, blockItm.Type.Name)
+					return fmt.Errorf("exponential query detected: '%s.%s' -> '%s'", currentBlock.Type, blockItm.Name, blockItm.Type.Name)
 				}
 				v.visitMap.AddEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name)
 
