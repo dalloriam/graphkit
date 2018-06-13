@@ -7,12 +7,13 @@ import (
 )
 
 type queryValidator struct {
+	config   ValidationConfig
 	schema   *Schema
 	visitMap *graph
 }
 
-func newQueryValidator(schema *Schema) *queryValidator {
-	return &queryValidator{schema, newGraph()}
+func newQueryValidator(schema *Schema, config ValidationConfig) *queryValidator {
+	return &queryValidator{config, schema, newGraph()}
 }
 
 func (v *queryValidator) walk(currentTree *request, currentBlock *nodes.Block) error {
@@ -20,7 +21,7 @@ func (v *queryValidator) walk(currentTree *request, currentBlock *nodes.Block) e
 		if blockItm.Name == currentTree.Name {
 			if len(currentTree.Children) > 0 {
 
-				if v.visitMap.HasEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name) {
+				if v.visitMap.HasEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name) && !v.config.IgnoreExponentialQueries {
 					return fmt.Errorf("cycle detected: '%s.%s' -> '%s'", currentBlock.Type, blockItm.Name, blockItm.Type.Name)
 				}
 				v.visitMap.AddEdge(currentBlock.Type, blockItm.Type.Name, blockItm.Name)
@@ -38,6 +39,9 @@ func (v *queryValidator) walk(currentTree *request, currentBlock *nodes.Block) e
 			}
 			return nil
 		}
+	}
+	if v.config.IgnoreNonExistentTypes {
+		return nil
 	}
 	return fmt.Errorf("field '%s' not found", currentTree.Name)
 }
@@ -66,9 +70,13 @@ func (v *queryValidator) Traverse(req *request) error {
 
 // ValidateQuery validates a GraphQL query against the provided schema.
 // It checks for unknown fields as well as for possible malicious queries.
-func ValidateQuery(query string, schema *Schema) error {
+func ValidateQuery(query string, schema *Schema, config *ValidationConfig) error {
 
-	validator := newQueryValidator(schema)
+	if config == nil {
+		config = &ValidationConfig{}
+	}
+
+	validator := newQueryValidator(schema, *config)
 
 	req, err := newRequest(query)
 	if err != nil {
